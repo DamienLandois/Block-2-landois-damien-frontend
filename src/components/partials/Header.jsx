@@ -30,6 +30,11 @@ export default function Header() {
     <header className="border-b">
       <div className="header-top">
         {" "}
+        <div className="absolute top-4 left-4">
+          <NavLink to="/profil">
+            <User size={40} />
+          </NavLink>
+        </div>
         {width < 1100 && (
           <div className="absolute top-4 right-4">
             <Hamburger

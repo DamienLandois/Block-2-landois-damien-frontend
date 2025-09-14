@@ -25,7 +25,7 @@ export const massageStore = create((set) => ({
             },
         });
 
-        set((state) => ({
+        set((state) => ({ 
             massages: [...state.massages, data],
         }));
 
