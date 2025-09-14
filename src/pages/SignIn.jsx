@@ -17,7 +17,7 @@ export default function LoginCard({ onSubmit }) {
     try {
       // Appel de l'API ici
       onSubmit?.({ email, password })
-    } catch (err) {
+    } catch {
       setError("Identifiants invalides.")
     } finally {
       setLoading(false)
@@ -71,7 +71,7 @@ export default function LoginCard({ onSubmit }) {
 
       <CardFooter className="text-sm">
         <span className="text-muted-foreground">
-          Pas de compte ? <a href="#" className="underline underline-offset-4 ml-1">Inscription</a>
+          Pas de compte ? <a href="/signup" className="underline underline-offset-4 ml-1">Inscription</a>
         </span>
       </CardFooter>
     </Card>
