@@ -1,5 +1,4 @@
 import { useState } from "react"
-import axios from "axios"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -26,16 +25,13 @@ export default function SignUp() {
   const nameRegex = /^[A-Za-zÀ-ÿ\-]+$/
   // - Email basique
   const emailRegex = /^\S+@\S+\.\S+$/
-  // - Téléphone : exactement 10 chiffres
-  // const phoneRegex = /^\d{10}$/
   // - Mot de passe : min 11 caractères, 1 maj, 1 chiffre, 1 symbole
   const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{11,}$/
 
   const validate = () => {
-    if (!nameRegex.test(form.firstName)) return "Le prénom est incorrect."
-    if (!nameRegex.test(form.lastName)) return "Le nom est incorrect."
+    if (!nameRegex.test(form.firstname)) return "Le prénom est incorrect."
+    if (!nameRegex.test(form.name)) return "Le nom est incorrect."
     if (!emailRegex.test(form.email)) return "Email invalide."
-    //if (!phoneRegex.test(form.phone)) return "Le numéro doit contenir exactement 10 chiffres."
     if (!passwordRegex.test(form.password)) return "Le mot de passe doit faire au moins 11 caractères, contenir une majuscule, un chiffre et un symbole."
     return ""
   }
@@ -48,9 +44,6 @@ export default function SignUp() {
     setLoading(true)
     try {
       console.log("signup payload:", form)
-      const response = await axios.post("http://localhost:3001/user", form)
-      console.log("signup response:", response.data)
-
     } catch {
       setError("Impossible de créer le compte. Réessaie.")
     } finally {

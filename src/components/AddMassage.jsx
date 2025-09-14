@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import axios from "axios"
+
 
 export default function AddMassageCard() {
   const [form, setForm] = useState({
@@ -39,16 +39,11 @@ const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWZqd2pzaXYwMDAw
     setLoading(true)
 
     try {
-      console.log("Payload envoyé:", form)
-    const res = await axios.post("http://localhost:3001/massages", form, {
-  headers: {
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "multipart/form-data",
-  },
-})
+        const formData = new FormData()
+        console.log(formData)
 
       setSuccess("Massage ajouté ✅")
-      console.log("Réponse API:", response.data)
+      console.log("Réponse API:")
       setForm({
         name: "",
         description: "",

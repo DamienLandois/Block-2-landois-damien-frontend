@@ -23,3 +23,5 @@ export const authStore = create(() => ({
         saveToken(data.access_token);
     }
 }))
+
+export default authStore;

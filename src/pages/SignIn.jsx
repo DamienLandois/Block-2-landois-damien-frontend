@@ -4,13 +4,20 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 
-import { login } from "../lib/authStore"
+import authStore from "../lib/authStore"
 
-export default function LoginCard({ onSubmit }) {
+export default function LoginCard() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+
+  const login = authStore((state) => state.login)
+  const user = localStorage.getItem("user")
+  const token = localStorage.getItem("token")
+
+  console.log(user)
+  console.log(token)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -18,8 +25,9 @@ export default function LoginCard({ onSubmit }) {
     setLoading(true)
     try {
       login({ email, password })
-    } catch {
+    } catch(e) {
       setError("Identifiants invalides.")
+      console.log(e)
     } finally {
       setLoading(false)
     }

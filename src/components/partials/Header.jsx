@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
 import Hamburger from "hamburger-react";
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 export default function Header() {
   const linkClass = ({ isActive }) =>
     `px-3 py-2 rounded-md ${isActive ? "active-link" : ""}`;
