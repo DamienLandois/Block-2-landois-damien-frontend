@@ -1,5 +1,6 @@
 import React from 'react'
 import MassageCard from "../components/MassageCard"
+import AddMassage from "../components/AddMassage"
 
 export default function Massages() {
 
@@ -16,6 +17,9 @@ export default function Massages() {
         isAdmin={false}
         onEdit={() => console.log("Edit massage Suédois")}
       />
+
+      <AddMassage />
+      
     </div>
   )
 }

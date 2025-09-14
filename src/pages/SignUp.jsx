@@ -1,4 +1,5 @@
 import { useState } from "react"
+import axios from "axios"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -6,11 +7,11 @@ import { Button } from "@/components/ui/button"
 
 export default function SignUp() {
   const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
     email: "",
-    phone: "",
     password: "",
+    firstname: "",
+    name: "",
+    phoneNumber: "",
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -26,7 +27,7 @@ export default function SignUp() {
   // - Email basique
   const emailRegex = /^\S+@\S+\.\S+$/
   // - Téléphone : exactement 10 chiffres
-  const phoneRegex = /^\d{10}$/
+  // const phoneRegex = /^\d{10}$/
   // - Mot de passe : min 11 caractères, 1 maj, 1 chiffre, 1 symbole
   const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{11,}$/
 
@@ -34,7 +35,7 @@ export default function SignUp() {
     if (!nameRegex.test(form.firstName)) return "Le prénom est incorrect."
     if (!nameRegex.test(form.lastName)) return "Le nom est incorrect."
     if (!emailRegex.test(form.email)) return "Email invalide."
-    if (!phoneRegex.test(form.phone)) return "Le numéro doit contenir exactement 10 chiffres."
+    //if (!phoneRegex.test(form.phone)) return "Le numéro doit contenir exactement 10 chiffres."
     if (!passwordRegex.test(form.password)) return "Le mot de passe doit faire au moins 11 caractères, contenir une majuscule, un chiffre et un symbole."
     return ""
   }
@@ -47,7 +48,9 @@ export default function SignUp() {
     setLoading(true)
     try {
       console.log("signup payload:", form)
-      // TODO: appel API ou navigation
+      const response = await axios.post("http://localhost:3001/user", form)
+      console.log("signup response:", response.data)
+
     } catch {
       setError("Impossible de créer le compte. Réessaie.")
     } finally {
@@ -67,20 +70,20 @@ export default function SignUp() {
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="firstName">Prénom</Label>
+                <Label htmlFor="firstname">Prénom</Label>
                 <Input
-                  id="firstName"
-                  value={form.firstName}
+                  id="firstname"
+                  value={form.firstname}
                   onChange={onChange}
                   placeholder="Prénom"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastName">Nom</Label>
+                <Label htmlFor="name">Nom</Label>
                 <Input
-                  id="lastName"
-                  value={form.lastName}
+                  id="name"
+                  value={form.name}
                   onChange={onChange}
                   placeholder="Nom"
                   required
@@ -102,11 +105,11 @@ export default function SignUp() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Téléphone</Label>
+              <Label htmlFor="phoneNumber">Téléphone</Label>
               <Input
-                id="phone"
+                id="phoneNumber"
                 type="tel"
-                value={form.phone}
+                value={form.phoneNumber}
                 onChange={onChange}
                 placeholder="0612345678"
                 required
