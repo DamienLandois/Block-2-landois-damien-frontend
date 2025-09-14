@@ -19,7 +19,7 @@ export default function AddMassageCard() {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
 
-    const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWZqd2pzaXYwMDAwbXM2eWw2cTgxNmQzIiwiZW1haWwiOiJsaWV2aW4uZHlsYW4ucHJvQGdtYWlsLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc1Nzg2ODU3MiwiZXhwIjoxNzU3ODY5NDcyfQ.9F2Ugx8gU0Pe2WfiUuCydAH1veRGozegNcVecSSdXT0"
+const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWZqd2pzaXYwMDAwbXM2eWw2cTgxNmQzIiwiZW1haWwiOiJsaWV2aW4uZHlsYW4ucHJvQGdtYWlsLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc1Nzg2ODU3MiwiZXhwIjoxNzU3ODY5NDcyfQ.9F2Ugx8gU0Pe2WfiUuCydAH1veRGozegNcVecSSdXT0"
 
   const handleChange = (e) => {
     const { id, value, files } = e.target
