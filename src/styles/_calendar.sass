@@ -1,0 +1,110 @@
+// Vars
+$orange: rgb(252, 188, 79)
+$blanc: #f1f1f1
+$noir: #333
+
+// Base
+*
+    margin: 0
+    padding: 0
+    box-sizing: border-box
+    font-family: Arial, Helvetica, sans-serif
+
+body
+    display: flex
+    align-items: center
+    padding: 0 10px
+    justify-content: center
+    min-height: 100vh
+    background: $orange
+
+// Wrapper
+.wrapper
+    width: 450px
+    background: $blanc
+    border-radius: 10px
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12)
+
+    .wrapper-header
+        display: flex
+        align-items: center
+        padding: 25px 30px 10px
+        justify-content: space-between
+
+    .icons
+        display: flex
+
+        span
+            height: 38px
+            width: 38px
+            margin: 0 1px
+            cursor: pointer
+            color: #878787
+            text-align: center
+            line-height: 38px
+            font-size: 1.9rem
+            user-select: none
+            border-radius: 50%
+
+        span:last-child
+            margin-right: -10px
+
+        span:hover
+            background: #f2f2f2
+
+    .date
+        font-size: 1.45rem
+        font-weight: 500
+
+// Calendar
+.calendrier
+    padding: 20px
+
+    ul
+        display: flex
+        flex-wrap: wrap
+        list-style: none
+        text-align: center
+
+    .jours
+        margin-bottom: 20px
+
+    li
+        color: $noir
+        width: calc(100% / 7)
+        font-size: 1.07rem
+
+    .semaines
+        li
+            font-weight: 500
+            cursor: default
+
+    .jours
+        li
+        z-index: 1
+        cursor: pointer
+        position: relative
+        margin-top: 30px
+
+        &.inactive
+            color: #aaa
+
+        &.active
+            color: $blanc
+
+        &::before
+            position: absolute
+            content: ""
+            left: 50%
+            top: 50%
+            height: 40px
+            width: 40px
+            z-index: -1
+            border-radius: 50%
+            transform: translate(-50%, -50%)
+
+        &.active::before
+            background: $orange
+
+        &:not(.active):hover::before
+            background: $blanc

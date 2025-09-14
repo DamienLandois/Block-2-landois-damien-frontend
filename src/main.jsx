@@ -9,6 +9,7 @@ import SignUp from "./pages/SignUp.jsx"
 import Massages from "./pages/Massages.jsx"
 import Appointment from "./pages/Appointment.jsx"
 import About from "./pages/About.jsx"
+import Booking from "./pages/booking.jsx"
 
 import "./index.css"
 
@@ -20,7 +21,7 @@ const router = createBrowserRouter([
       { path: "/connexion", element: <SignIn /> },
       { path: "/inscription", element: <SignUp /> },
       { path: "/massages", element: <Massages /> },
-      { path: "/rendezvous", element: <Appointment /> },
+      { path: "/rendezvous", element: <Booking /> },
       { path: "/apropos", element: <About /> },
       { path: "*", element: <div className="p-8">404 - Page introuvable</div> },
     ],
