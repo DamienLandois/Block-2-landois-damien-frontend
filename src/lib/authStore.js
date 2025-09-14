@@ -1,25 +1,27 @@
 import { create } from "zustand";
 import axios from "axios";
-import {getToken, saveToken, saveUser} from "@/lib/utils.js";
+import { getToken, saveToken, saveUser } from "@/lib/utils.js";
 
 const URL = "http://localhost:3001";
 
 export const authStore = create(() => ({
-    register: async (credentials) => {
-        await axios.post(`${URL}/user`, credentials);
-    },
+  register: async (credentials) => {
+    await axios.post(`${URL}/user`, credentials);
+  },
 
-    registerAdmin: async (credentials) => {
-        await axios.post(`${URL}/user/admin`, credentials, {
-            headers: {
-                Authorization: `Bearer ${getToken()}`,
-            },
-        });
-    },
+  registerAdmin: async (credentials) => {
+    await axios.post(`${URL}/user/admin`, credentials, {
+      headers: {
+        Authorization: `Bearer ${getToken()}`,
+      },
+    });
+  },
 
-    login: async (credentials) => {
-        const {data} = await axios.post(`${URL}/auth/login`, credentials);
-        saveUser(data.user);
-        saveToken(data.access_token);
-    }
-}))
+  login: async (credentials) => {
+    const { data } = await axios.post(`${URL}/auth/login`, credentials);
+    saveUser(data.user);
+    saveToken(data.access_token);
+  },
+}));
+
+export default authStore;

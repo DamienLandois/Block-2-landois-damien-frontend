@@ -1,35 +1,44 @@
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { useState } from "react"
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
-import { login } from "../lib/authStore"
+import login from "../lib/authStore";
 
 export default function LoginCard({ onSubmit }) {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError("")
-    setLoading(true)
+    e.preventDefault();
+    setError("");
+    setLoading(true);
     try {
-      login({ email, password })
+      login({ email, password });
     } catch {
-      setError("Identifiants invalides.")
+      setError("Identifiants invalides.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <Card className="w-full max-w-sm">
       <CardHeader>
         <CardTitle>Connexion</CardTitle>
-        <CardDescription>Entre tes identifiants pour accéder à ton compte.</CardDescription>
+        <CardDescription>
+          Entre tes identifiants pour accéder à ton compte.
+        </CardDescription>
       </CardHeader>
 
       <CardContent>
@@ -60,9 +69,7 @@ export default function LoginCard({ onSubmit }) {
             />
           </div>
 
-          {error && (
-            <p className="text-sm text-red-500">{error}</p>
-          )}
+          {error && <p className="text-sm text-red-500">{error}</p>}
 
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Connexion..." : "Se connecter"}
@@ -72,9 +79,12 @@ export default function LoginCard({ onSubmit }) {
 
       <CardFooter className="text-sm">
         <span className="text-muted-foreground">
-          Pas de compte ? <a href="/signup" className="underline underline-offset-4 ml-1">Inscription</a>
+          Pas de compte ?{" "}
+          <a href="/signup" className="underline underline-offset-4 ml-1">
+            Inscription
+          </a>
         </span>
       </CardFooter>
     </Card>
-  )
+  );
 }
