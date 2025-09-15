@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { planningStore } from "../lib/utils/planningStore";
+import { planningStore } from "../lib/planningStore";
 
 /**
  * Hook d’envoi de créneaux via la store (createCreneau), on envoi les créneaux UN PAR UN pour check les erreurs individuelles de chaque créneau.
