@@ -1,44 +1,48 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 
-// Utils (ISO week: lundi)
-const startOfISOWeek = (d) => {
-  const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const day = (date.getDay() + 6) % 7; // 0 = lundi .. 6 = dimanche
-  date.setDate(date.getDate() - day);
-  date.setHours(0, 0, 0, 0);
-  return date;
+const getIsoWeekStart = (date) => {
+  const copy = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const day = (copy.getDay() + 6) % 7;
+  copy.setDate(copy.getDate() - day);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
 };
-const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const addDays = (date, n) => {
+  const copy = new Date(date);
+  copy.setDate(copy.getDate() + n);
+  return copy;
+};
 const pad2 = (n) => String(n).padStart(2, "0");
 
-// Construit DTO pour UNE semaine (jours cochés + intervalle) à partir d'une plage baseStart/baseEnd
-const buildTimeSlotPayloadsForWeek = ({ weekStart, selectedDays, baseStart, baseEnd, intervalMin }) => {
-  if (!weekStart || !baseStart || !baseEnd) return [];
-  const startTotal = baseStart.getHours() * 60 + baseStart.getMinutes();
-  const endTotal   = baseEnd.getHours()   * 60 + baseEnd.getMinutes();
-  if (endTotal <= startTotal) return [];
+const mergeTimeRanges = (ranges) => {
+  if (!ranges?.length) return [];
+  const sorted = ranges
+    .map((r) => ({ start: new Date(r.start), end: new Date(r.end) }))
+    .sort((a, b) => a.start - b.start);
 
-  const payloads = [];
-  for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
-    if (!selectedDays[dayIdx]) continue;
-    const baseDay = addDays(weekStart, dayIdx);
-    for (let cur = startTotal; cur + intervalMin <= endTotal; cur += intervalMin) {
-      const sH = Math.floor(cur / 60), sM = cur % 60;
-      const eT = cur + intervalMin, eH = Math.floor(eT / 60), eM = eT % 60;
-      const start = new Date(baseDay); start.setHours(sH, sM, 0, 0);
-      const end   = new Date(baseDay); end.setHours(eH, eM, 0, 0);
-      payloads.push({ startTime: start.toISOString(), endTime: end.toISOString(), isActive: true });
+  const merged = [sorted[0]];
+  for (let i = 1; i < sorted.length; i++) {
+    const last = merged[merged.length - 1];
+    const cur = sorted[i];
+    // chevauchement OU contigu (cur.start <= last.end)
+    if (cur.start <= last.end) {
+      if (cur.end > last.end) last.end = cur.end;
+    } else {
+      merged.push(cur);
     }
   }
-  return payloads;
+  return merged;
 };
+const addAndMergeTimeRange = (ranges, newRange) =>
+  mergeTimeRanges([...(ranges || []), newRange]);
 
 export default function WeekCalendar({
   anchorDate,
   startHour = 6,
   endHour = 21,
   selectable = true,
-  onSlotsChange, // ← renvoie les DTO générés pour la SEMAINE COURANTE uniquement
+  // callback vers le parent : reçoit un tableau de DTO {startTime,endTime,isActive}
+  onWeekSlotsChange,
 }) {
   if (!anchorDate) {
     return (
@@ -48,174 +52,223 @@ export default function WeekCalendar({
     );
   }
 
-  const weekStart = useMemo(() => startOfISOWeek(anchorDate), [anchorDate]);
-  const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
+  // Semainier
+  const weekStartDate = useMemo(() => getIsoWeekStart(anchorDate), [anchorDate]);
+  const weekDays = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => addDays(weekStartDate, i)),
+    [weekStartDate]
+  );
 
-  // Grille 30 min
-  const slots = useMemo(() => {
-    const s = [];
+  // Grille demi-heure : [HH:00, HH:30, ...]
+  const gridHalfHourSlots = useMemo(() => {
+    const list = [];
     for (let h = startHour; h <= endHour; h++) {
-      s.push({ kind: "full", hour: h });         // HH:00
-      if (h < endHour) s.push({ kind: "half", hour: h }); // HH:30
+      list.push({ kind: "full", hour: h }); // HH:00
+      if (h < endHour) list.push({ kind: "half", hour: h }); // HH:30
     }
-    return s;
+    return list;
   }, [startHour, endHour]);
 
-  // Drag-to-select (snap 00/30 ⇒ si on clique entre deux lignes, on snap au-dessus)
-  const [drag, setDrag] = useState(null); // { dayIndex, startIdx, hoverIdx }
-  const [baseStart, setBaseStart] = useState(null);
-  const [baseEnd, setBaseEnd] = useState(null);
+  // Plages par jour (plusieurs possibles) — reset quand la semaine change
+  const [dayTimeRanges, setDayTimeRanges] = useState(() =>
+    Array.from({ length: 7 }, () => [])
+  );
+  useEffect(() => {
+    setDayTimeRanges(Array.from({ length: 7 }, () => []));
+  }, [weekStartDate]);
 
-  const slotStartDate = (dayIdx, slotIdx) => {
-    const base = days[dayIdx];
-    const s = slots[slotIdx];
-    const H = s.hour;
-    const M = s.kind === "half" ? 30 : 0;
+  // Drag-to-select (snap 00/30)
+  const [dragSelection, setDragSelection] = useState(null); // { dayIndex, startSlotIndex, hoverSlotIndex }
+
+  const getDateTimeForSlot = (dayIndex, slotIndex) => {
+    const base = weekDays[dayIndex];
+    const slot = gridHalfHourSlots[slotIndex];
+    const H = slot.hour;
+    const M = slot.kind === "half" ? 30 : 0;
     const d = new Date(base);
     d.setHours(H, M, 0, 0);
     return d;
   };
 
-  const isSelected = (dayIdx, slotIdx) => {
-    if (!drag || dayIdx !== drag.dayIndex) return false;
-    const a = Math.min(drag.startIdx, drag.hoverIdx ?? drag.startIdx);
-    const b = Math.max(drag.startIdx, drag.hoverIdx ?? drag.startIdx);
-    return slotIdx >= a && slotIdx <= b;
+  const isDraggingSlot = (dayIndex, slotIndex) => {
+    if (!dragSelection || dayIndex !== dragSelection.dayIndex) return false;
+    const a = Math.min(
+      dragSelection.startSlotIndex,
+      dragSelection.hoverSlotIndex ?? dragSelection.startSlotIndex
+    );
+    const b = Math.max(
+      dragSelection.startSlotIndex,
+      dragSelection.hoverSlotIndex ?? dragSelection.startSlotIndex
+    );
+    return slotIndex >= a && slotIndex <= b;
   };
 
-  const handleDown = (dayIdx, slotIdx, e) => {
+  const isSavedSlot = (dayIndex, slotIndex) => {
+    const t = getDateTimeForSlot(dayIndex, slotIndex).getTime();
+    const ranges = dayTimeRanges[dayIndex] || [];
+    // un slot appartient à une plage ssi t ∈ [start, end)
+    return ranges.some(({ start, end }) => t >= start.getTime() && t < end.getTime());
+  };
+
+  const handleMouseDown = (dayIndex, slotIndex, e) => {
     if (!selectable) return;
     e.preventDefault();
-    setDrag({ dayIndex: dayIdx, startIdx: slotIdx, hoverIdx: slotIdx });
-  };
-
-  const handleEnter = (dayIdx, slotIdx) => {
-    if (!selectable || !drag) return;
-    if (dayIdx !== drag.dayIndex) return; // monojour
-    setDrag((d) => ({ ...d, hoverIdx: slotIdx }));
-  };
-
-  const handleUp = (dayIdx) => {
-    if (!selectable || !drag) return;
-    if (dayIdx !== drag.dayIndex) { setDrag(null); return; }
-    const a = Math.min(drag.startIdx, drag.hoverIdx ?? drag.startIdx);
-    const b = Math.max(drag.startIdx, drag.hoverIdx ?? drag.startIdx);
-    const start = slotStartDate(drag.dayIndex, a);
-    const end = new Date(slotStartDate(drag.dayIndex, b).getTime() + 30 * 60 * 1000); // borne suivante
-    setBaseStart(start);
-    setBaseEnd(end);
-    setDrag(null);
-  };
-
-  // Options (jours cochés / intervalle) —> affectent la génération des slots
-  const [selectedDays, setSelectedDays] = useState([true, true, true, true, true, false, false]); // Lun..Dim
-  const [intervalMin, setIntervalMin] = useState(30);
-
-  // Recalcule et notifie le parent à chaque changement pertinent
-  useEffect(() => {
-    const payloads = buildTimeSlotPayloadsForWeek({
-      weekStart, selectedDays, baseStart, baseEnd, intervalMin,
+    setDragSelection({
+      dayIndex,
+      startSlotIndex: slotIndex,
+      hoverSlotIndex: slotIndex,
     });
-    onSlotsChange?.(payloads);
-  }, [weekStart, selectedDays, baseStart, baseEnd, intervalMin, onSlotsChange]);
+  };
 
-  const fmtDayShort = (d) =>
-    d.toLocaleDateString("fr-FR", { weekday: "short" }).replace(".", "").replace(/^\w/, (c) => c.toUpperCase());
+  const handleMouseEnter = (dayIndex, slotIndex) => {
+    if (!selectable || !dragSelection) return;
+    if (dayIndex !== dragSelection.dayIndex) return;
+    setDragSelection((prev) => ({ ...prev, hoverSlotIndex: slotIndex }));
+  };
+
+  const handleMouseUp = (dayIndex) => {
+    if (!selectable || !dragSelection) return;
+    if (dayIndex !== dragSelection.dayIndex) {
+      setDragSelection(null);
+      return;
+    }
+
+    const a = Math.min(
+      dragSelection.startSlotIndex,
+      dragSelection.hoverSlotIndex ?? dragSelection.startSlotIndex
+    );
+    const b = Math.max(
+      dragSelection.startSlotIndex,
+      dragSelection.hoverSlotIndex ?? dragSelection.startSlotIndex
+    );
+
+    const start = getDateTimeForSlot(dragSelection.dayIndex, a);
+    const end = new Date(
+      getDateTimeForSlot(dragSelection.dayIndex, b).getTime() + 30 * 60 * 1000
+    );
+
+    setDayTimeRanges((prev) => {
+      const next = prev.slice();
+      next[dayIndex] = addAndMergeTimeRange(prev[dayIndex], { start, end });
+      return next;
+    });
+
+    setDragSelection(null);
+  };
+
+  const changeCallbackRef = useRef(onWeekSlotsChange);
+  useEffect(() => {
+    changeCallbackRef.current = onWeekSlotsChange;
+  }, [onWeekSlotsChange]);
+
+  // Notifie le parent avec DTO (1 plage = 1 créneau)
+  useEffect(() => {
+    const dtos = [];
+    for (let i = 0; i < 7; i++) {
+      const ranges = (dayTimeRanges[i] || [])
+        .slice()
+        .sort((r1, r2) => r1.start - r2.start);
+      for (const r of ranges) {
+        dtos.push({
+          startTime: r.start.toISOString(),
+          endTime: r.end.toISOString(),
+          isActive: true,
+        });
+      }
+    }
+    changeCallbackRef.current?.(dtos);
+  }, [dayTimeRanges]);
+
+  const formatDayShort = (d) =>
+    d
+      .toLocaleDateString("fr-FR", { weekday: "short" })
+      .replace(".", "")
+      .replace(/^\w/, (c) => c.toUpperCase());
+
+  // Couleurs de feedback
+  const COLOR_DRAG = "rgba(59, 130, 246, 0.35)"; // bleu sélection (drag)
+  const COLOR_SAVED = "rgba(59, 130, 246, 0.18)"; // bleu doux (plages sauvegardées)
 
   return (
     <div className={`week-calendar${selectable ? " selectable" : ""}`}>
       <div className="week-calendar__header">
         <div className="range">
-          {fmtDayShort(days[0])} {days[0].getDate()} — {fmtDayShort(days[6])} {days[6].getDate()}
-          {baseStart && baseEnd && (
-            <span style={{ marginLeft: 8 }}>
-              • Plage : {pad2(baseStart.getHours())}:{pad2(baseStart.getMinutes())} → {pad2(baseEnd.getHours())}:{pad2(baseEnd.getMinutes())}
-            </span>
-          )}
+          {formatDayShort(weekDays[0])} {weekDays[0].getDate()} —{" "}
+          {formatDayShort(weekDays[6])} {weekDays[6].getDate()}
         </div>
       </div>
 
-      {/* En-têtes jours */}
       <div className="week-calendar__days">
         <div className="day-head empty" />
-        {days.map((d, i) => (
+        {weekDays.map((d, i) => (
           <div key={i} className="day-head">
-            <div className="day-name">{fmtDayShort(d)}</div>
+            <div className="day-name">{formatDayShort(d)}</div>
             <div className="day-date">{d.getDate()}</div>
           </div>
         ))}
         <div className="day-head empty" />
       </div>
 
-      {/* Grille (labels gauche/droite + 7 colonnes) */}
       <div className="week-calendar__grid">
         <div className="col time-left">
-          {slots.map((s, i) => (
+          {gridHalfHourSlots.map((s, i) => (
             <div key={i} className={`slot ${s.kind === "half" ? "slot--half" : "slot--full"}`}>
-              {s.kind === "full" ? <span className="label-left">{String(s.hour).padStart(2, "0")}:00</span> : null}
+              {s.kind === "full" ? (
+                <span className="label-left">{String(s.hour).padStart(2, "0")}:00</span>
+              ) : null}
             </div>
           ))}
         </div>
 
-        {days.map((d, di) => (
+        {weekDays.map((d, dayIndex) => (
           <div
-            key={di}
+            key={dayIndex}
             className="col day-col"
             aria-label={d.toDateString()}
-            onMouseUp={() => handleUp(di)}
+            onMouseUp={() => handleMouseUp(dayIndex)}
           >
-            {slots.map((s, i) => (
-              <div
-                key={i}
-                role={selectable ? "button" : undefined}
-                className={[
-                  "slot",
-                  s.kind === "half" ? "slot--half" : "slot--full",
-                  isSelected(di, i) ? "slot--selected" : "",
-                ].join(" ").trim()}
-                data-time={`${String(s.hour).padStart(2, "0")}:${s.kind === "half" ? "30" : "00"}`}
-                onMouseDown={(e) => handleDown(di, i, e)}
-                onMouseEnter={() => handleEnter(di, i)}
-              />
-            ))}
+            {gridHalfHourSlots.map((s, slotIndex) => {
+              const dragging = isDraggingSlot(dayIndex, slotIndex);
+              const saved = isSavedSlot(dayIndex, slotIndex);
+              const classNames = [
+                "slot",
+                s.kind === "half" ? "slot--half" : "slot--full",
+                dragging ? "slot--dragging" : "",
+                saved ? "slot--saved" : "",
+              ]
+                .join(" ")
+                .trim();
+
+              return (
+                <div
+                  key={slotIndex}
+                  role={selectable ? "button" : undefined}
+                  className={classNames}
+                  data-time={`${String(s.hour).padStart(2, "0")}:${s.kind === "half" ? "30" : "00"}`}
+                  onMouseDown={(e) => handleMouseDown(dayIndex, slotIndex, e)}
+                  onMouseEnter={() => handleMouseEnter(dayIndex, slotIndex)}
+                  style={{
+                    backgroundColor: dragging
+                      ? COLOR_DRAG
+                      : saved
+                      ? COLOR_SAVED
+                      : undefined,
+                    transition: dragging ? "none" : "background-color 80ms linear",
+                  }}
+                />
+              );
+            })}
           </div>
         ))}
 
         <div className="col time-right">
-          {slots.map((s, i) => (
+          {gridHalfHourSlots.map((s, i) => (
             <div key={i} className={`slot ${s.kind === "half" ? "slot--half" : "slot--full"}`}>
-              {s.kind === "half" ? <span className="label-right">{String(s.hour).padStart(2, "0")}:30</span> : null}
+              {s.kind === "half" ? (
+                <span className="label-right">{String(s.hour).padStart(2, "0")}:30</span>
+              ) : null}
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* Options (jours / intervalle) */}
-      <div className="week-calendar__controls" style={{ marginTop: 10 }}>
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <strong>Jours :</strong>
-            {["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"].map((lbl, i) => (
-              <label key={lbl} style={{ display: "flex", gap: 4, alignItems: "center" }}>
-                <input
-                  type="checkbox"
-                  checked={!!selectedDays[i]}
-                  onChange={() =>
-                    setSelectedDays((prev) => prev.map((v, idx) => (idx === i ? !v : v)))
-                  }
-                /> {lbl}
-              </label>
-            ))}
-          </div>
-
-          <label style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            Intervalle
-            <select value={intervalMin} onChange={(e) => setIntervalMin(parseInt(e.target.value, 10))}>
-              <option value={15}>15 min</option>
-              <option value={30}>30 min</option>
-              <option value={60}>60 min</option>
-            </select>
-          </label>
         </div>
       </div>
     </div>

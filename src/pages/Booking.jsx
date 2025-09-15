@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import Calendar from "../components/booking/Calendar";
 import WeekCalendar from "../components/booking/WeekCalendar";
 import useTimeSlotSender from "@/hooks/useTimeSlotSender";
 
-// Helpers
 const monthIndexFromFr = (label) => {
   const map = {
     Janvier: 0, Février: 1, Mars: 2, Avril: 3, Mai: 4, Juin: 5,
@@ -11,33 +10,36 @@ const monthIndexFromFr = (label) => {
   };
   return map[label] ?? null;
 };
-const startOfISOWeek = (d) => {
-  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const day = (x.getDay() + 6) % 7;
-  x.setDate(x.getDate() - day);
-  x.setHours(0, 0, 0, 0);
-  return x;
+const getIsoWeekStart = (date) => {
+  const copy = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const day = (copy.getDay() + 6) % 7;
+  copy.setHours(0, 0, 0, 0);
+  return copy;
 };
-const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
-const frDays = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+const addDays = (date, n) => {
+  const copy = new Date(date);
+  copy.setDate(copy.getDate() + n);
+  return copy;
+};
+const FRENCH_WEEKDAY_SHORT = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 const pad2 = (n) => String(n).padStart(2, "0");
-const fmtHM = (date) => `${pad2(date.getHours())}h${pad2(date.getMinutes())}`;
+const formatHM = (date) => `${pad2(date.getHours())}h${pad2(date.getMinutes())}`;
 
-// Réplique une semaine de slots sur N semaines
-const replicateWeeks = (baseWeekSlots, weeks) => {
-  if (!weeks || weeks < 1) return baseWeekSlots;
+// Réplique une semaine de créneaux (1 plage = 1 créneau) sur N semaines
+const replicateWeeklySlots = (baseWeekTimeSlots, weeksCount) => {
+  if (!weeksCount || weeksCount < 1) return baseWeekTimeSlots;
   const out = [];
-  for (let w = 0; w < weeks; w++) {
+  for (let w = 0; w < weeksCount; w++) {
     const offsetDays = 7 * w;
-    for (const s of baseWeekSlots) {
-      const sStart = new Date(s.startTime);
-      const sEnd = new Date(s.endTime);
-      sStart.setDate(sStart.getDate() + offsetDays);
-      sEnd.setDate(sEnd.getDate() + offsetDays);
+    for (const slot of baseWeekTimeSlots) {
+      const start = new Date(slot.startTime);
+      const end = new Date(slot.endTime);
+      start.setDate(start.getDate() + offsetDays);
+      end.setDate(end.getDate() + offsetDays);
       out.push({
-        startTime: sStart.toISOString(),
-        endTime: sEnd.toISOString(),
-        isActive: s.isActive ?? true,
+        startTime: start.toISOString(),
+        endTime: end.toISOString(),
+        isActive: slot.isActive ?? true,
       });
     }
   }
@@ -46,99 +48,113 @@ const replicateWeeks = (baseWeekSlots, weeks) => {
 
 export default function Booking() {
   const [selectedDate, setSelectedDate] = useState(null);
-  const [slotsFromWeek, setSlotsFromWeek] = useState([]); // DTO pour la semaine courante
-  const [repeatWeeks, setRepeatWeeks] = useState(1);       // répétition côté Booking
-  const calRef = useRef(null);
+  // Créneaux (DTO) pour la semaine courante — 1 plage = 1 créneau
+  const [weeklyTimeSlots, setWeeklyTimeSlots] = useState([]);
+  const [repeatWeeksCount, setRepeatWeeksCount] = useState(1);
+  const calendarRootRef = useRef(null);
 
-  // Hook d’envoi via la store (enableSend=false => DRY-RUN)
+  // Hook d’envoi via la store (enableSend=false => DRY-RUN). Passe à true quand prêt.
   const { send, submitting, result, reset } = useTimeSlotSender({ enableSend: false });
 
-  // Capte le clic sur un jour du Calendar (sans le modifier)
+  // Clic sur un jour du Calendar (sans modifier le composant Calendar)
   useEffect(() => {
-    const root = calRef.current;
+    const root = calendarRootRef.current;
     if (!root) return;
 
-    const handleClick = (e) => {
+    const handleDayClick = (e) => {
       const li = e.target.closest(".jours li");
       if (!li || !root.contains(li)) return;
 
-      const jours = root.querySelector(".jours");
-      const lis = Array.from(jours.querySelectorAll("li"));
-      const idx = lis.indexOf(li);
-      const firstIdx = lis.findIndex((el) => !el.classList.contains("inactive"));
-      const lastIdx = lis.length - 1 - lis.slice().reverse().findIndex((el) => !el.classList.contains("inactive"));
+      const daysUl = root.querySelector(".jours");
+      const allLis = Array.from(daysUl.querySelectorAll("li"));
+      const clickedIndex = allLis.indexOf(li);
+      const firstOfMonth = allLis.findIndex((el) => !el.classList.contains("inactive"));
+      const lastOfMonth =
+        allLis.length - 1 - allLis.slice().reverse().findIndex((el) => !el.classList.contains("inactive"));
 
       const header =
         root.querySelector(".wrapper-header .date") ||
         root.querySelector("header .date") ||
         root.querySelector(".date");
 
-      const [moisLabel, yearStr] = (header?.textContent || "").trim().split(/\s+/);
-      const baseMonth = monthIndexFromFr(moisLabel);
-      const baseYear = parseInt(yearStr, 10);
-      if (baseMonth == null || !Number.isFinite(baseYear)) return;
+      const [monthLabel, yearStr] = (header?.textContent || "").trim().split(/\s+/);
+      const monthIndex = monthIndexFromFr(monthLabel);
+      const year = parseInt(yearStr, 10);
+      if (monthIndex == null || !Number.isFinite(year)) return;
 
-      let offset = 0;
-      if (idx < firstIdx) offset = -1;
-      else if (idx > lastIdx) offset = 1;
+      let monthOffset = 0;
+      if (clickedIndex < firstOfMonth) monthOffset = -1;
+      else if (clickedIndex > lastOfMonth) monthOffset = 1;
 
-      const dayNum = parseInt(li.textContent, 10);
-      if (!Number.isFinite(dayNum)) return;
+      const dayNumber = parseInt(li.textContent, 10);
+      if (!Number.isFinite(dayNumber)) return;
 
-      setSelectedDate(new Date(baseYear, baseMonth + offset, dayNum));
-      setSlotsFromWeek([]); // reset quand on change de semaine
+      setSelectedDate(new Date(year, monthIndex + monthOffset, dayNumber));
+      setWeeklyTimeSlots([]); // reset quand on change de semaine
       reset();
     };
 
-    root.addEventListener("click", handleClick);
-    return () => root.removeEventListener("click", handleClick);
+    root.addEventListener("click", handleDayClick);
+    return () => root.removeEventListener("click", handleDayClick);
   }, [reset]);
 
-  // Lundi de la semaine des slots reçus
-  const baseMonday = useMemo(() => {
-    if (!slotsFromWeek.length) return null;
-    const minStart = new Date(Math.min(...slotsFromWeek.map(s => Date.parse(s.startTime))));
-    return startOfISOWeek(minStart);
-  }, [slotsFromWeek]);
+  // Callback STABLE pour recevoir les créneaux depuis WeekCalendar
+  const handleWeekSlotsChange = useCallback((dtos) => {
+    setWeeklyTimeSlots(dtos);
+  }, []);
 
-  // On garde seulement la semaine de base (pour le récap et la réplication)
-  const baseWeekSlots = useMemo(() => {
-    if (!baseMonday) return [];
-    const nextMonday = addDays(baseMonday, 7);
-    return slotsFromWeek.filter(s => {
+  // Lundi de la semaine des créneaux reçus
+  const weekStartDate = useMemo(() => {
+    if (!weeklyTimeSlots.length) return null;
+    const minStart = new Date(Math.min(...weeklyTimeSlots.map((s) => Date.parse(s.startTime))));
+    return getIsoWeekStart(minStart);
+  }, [weeklyTimeSlots]);
+
+  // Sécurise : garde uniquement les créneaux de la semaine de base
+  const baseWeekTimeSlots = useMemo(() => {
+    if (!weekStartDate) return [];
+    const nextWeekStart = addDays(weekStartDate, 7);
+    return weeklyTimeSlots.filter((s) => {
       const d = new Date(s.startTime);
-      return d >= baseMonday && d < nextMonday;
+      return d >= weekStartDate && d < nextWeekStart;
     });
-  }, [slotsFromWeek, baseMonday]);
+  }, [weeklyTimeSlots, weekStartDate]);
 
-  // Récap min → max par jour
-  const recapRows = useMemo(() => {
-    const groups = Array.from({ length: 7 }, () => []);
-    for (const s of baseWeekSlots) {
-      const d = new Date(s.startTime);
-      const idx = (d.getDay() + 6) % 7; // 0=Mon..6=Sun
-      groups[idx].push(s);
+  // Récap par jour : plusieurs plages triées
+  const weeklySummaryRows = useMemo(() => {
+    const perDay = Array.from({ length: 7 }, () => []);
+    for (const slot of baseWeekTimeSlots) {
+      const start = new Date(slot.startTime);
+      const dayIndex = (start.getDay() + 6) % 7;
+      perDay[dayIndex].push(slot);
     }
-    return groups.map((slots, idx) => {
-      if (!slots.length) return { day: frDays[idx], range: "—" };
-      const minStart = new Date(Math.min(...slots.map(x => Date.parse(x.startTime))));
-      const maxEnd = new Date(Math.max(...slots.map(x => Date.parse(x.endTime))));
-      return { day: frDays[idx], range: `${fmtHM(minStart)} → ${fmtHM(maxEnd)}` };
+    return perDay.map((daySlots, idx) => {
+      const ordered = [...daySlots].sort(
+        (a, b) => Date.parse(a.startTime) - Date.parse(b.startTime)
+      );
+      const ranges = ordered.map((s) => {
+        const start = new Date(s.startTime),
+          end = new Date(s.endTime);
+        return `${formatHM(start)} → ${formatHM(end)}`;
+      });
+      return { dayLabel: FRENCH_WEEKDAY_SHORT[idx], ranges };
     });
-  }, [baseWeekSlots]);
+  }, [baseWeekTimeSlots]);
 
-  // Slots finaux (répétés N semaines) passés à l’envoi
-  const finalSlots = useMemo(() => replicateWeeks(baseWeekSlots, repeatWeeks), [baseWeekSlots, repeatWeeks]);
+  const timeSlotsToSend = useMemo(
+    () => replicateWeeklySlots(baseWeekTimeSlots, repeatWeeksCount),
+    [baseWeekTimeSlots, repeatWeeksCount]
+  );
 
   return (
     <div className="booking-page">
       <header className="booking-header">
         <h1>Gestion des créneaux</h1>
-        <p>Sélectionnez une plage (drag) dans la semaine, cochez jours & intervalle, vérifiez le récap, puis envoyez.</p>
+        <p>Glissez pour créer des plages par jour (plusieurs possibles), vérifiez le récap, puis envoyez.</p>
       </header>
 
       <main className="booking-grid">
-        <section className="booking-calendar" ref={calRef}>
+        <section className="booking-calendar" ref={calendarRootRef}>
           <Calendar />
         </section>
 
@@ -146,11 +162,10 @@ export default function Booking() {
           <WeekCalendar
             anchorDate={selectedDate}
             selectable
-            onSlotsChange={(payloads) => setSlotsFromWeek(payloads)} // ← slots d’UNE semaine
+            onWeekSlotsChange={handleWeekSlotsChange}é
           />
         </aside>
 
-        {/* Récap + répétition */}
         <section className="booking-summary" style={{ marginTop: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             <h2 style={{ margin: 0 }}>Récapitulatif (semaine sélectionnée)</h2>
@@ -160,14 +175,18 @@ export default function Booking() {
                 type="number"
                 min={1}
                 max={52}
-                value={repeatWeeks}
-                onChange={(e) => setRepeatWeeks(Math.max(1, Math.min(52, parseInt(e.target.value || "1", 10))))}
+                value={repeatWeeksCount}
+                onChange={(e) =>
+                  setRepeatWeeksCount(
+                    Math.max(1, Math.min(52, parseInt(e.target.value || "1", 10)))
+                  )
+                }
                 style={{ width: 70 }}
               />
               semaine(s)
             </label>
             <span style={{ color: "#666" }}>
-              Total créneaux à envoyer : <strong>{finalSlots.length}</strong>
+              Total créneaux à envoyer : <strong>{timeSlotsToSend.length}</strong>
             </span>
           </div>
 
@@ -175,27 +194,28 @@ export default function Booking() {
             <thead>
               <tr style={{ textAlign: "left", borderBottom: "1px solid #eee" }}>
                 <th style={{ padding: "8px 6px" }}>Jour</th>
-                <th style={{ padding: "8px 6px" }}>Plage</th>
+                <th style={{ padding: "8px 6px" }}>Plages</th>
               </tr>
             </thead>
             <tbody>
-              {recapRows.map((row, i) => (
+              {weeklySummaryRows.map((row, i) => (
                 <tr key={i} style={{ borderBottom: "1px solid #f2f2f2" }}>
-                  <td style={{ padding: "8px 6px", width: 100 }}>{row.day}</td>
-                  <td style={{ padding: "8px 6px" }}>{row.range}</td>
+                  <td style={{ padding: "8px 6px", width: 100 }}>{row.dayLabel}</td>
+                  <td style={{ padding: "8px 6px" }}>
+                    {row.ranges.length ? row.ranges.join("   ") : "—"}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </section>
 
-        {/* Envoi via hook (store à l’intérieur) */}
         <section className="booking-admin" style={{ marginTop: 16 }}>
           <button
-            onClick={() => send(finalSlots)}
-            disabled={!finalSlots.length || submitting}
+            onClick={() => send(timeSlotsToSend)}
+            disabled={!timeSlotsToSend.length || submitting}
           >
-            {submitting ? "Envoi..." : `Envoyer ${finalSlots.length} créneaux`}
+            {submitting ? "Envoi..." : `Envoyer ${timeSlotsToSend.length} créneaux`}
           </button>
 
           {result && (
