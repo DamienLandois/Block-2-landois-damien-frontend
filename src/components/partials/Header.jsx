@@ -1,7 +1,8 @@
 import { NavLink } from "react-router-dom";
 import Hamburger from "hamburger-react";
+import { use, useEffect, useState } from "react";
 import { User } from "lucide-react";
-import { useEffect, useState } from "react";
+
 export default function Header() {
   const linkClass = ({ isActive }) =>
     `px-3 py-2 rounded-md ${isActive ? "active-link" : ""}`;
@@ -36,6 +37,7 @@ export default function Header() {
         {" "}
         <div className="absolute top-4 left-4">
           <NavLink to="/profil">
+
             <User size={40} />
           </NavLink>
         </div>
