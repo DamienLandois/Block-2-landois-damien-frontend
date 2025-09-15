@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import Hamburger from "hamburger-react";
+import { User } from "lucide-react";
 import { useEffect, useState } from "react";
 export default function Header() {
   const linkClass = ({ isActive }) =>
@@ -25,6 +26,9 @@ export default function Header() {
       setOpen(false);
     }
   }, [width]);
+
+
+    console.log(localStorage.getItem("user"));
 
   return (
     <header className="border-b">

@@ -1,10 +1,17 @@
-import { useState } from "react"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import axios from "axios"
+import { useState } from "react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import axios from "axios";
 
 export default function AddMassageCard() {
   const [form, setForm] = useState({
@@ -40,16 +47,16 @@ export default function AddMassageCard() {
     setLoading(true);
 
     try {
-      console.log("Payload envoyé:", form)
-    const res = await axios.post("http://localhost:3001/massages", form, {
-  headers: {
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "multipart/form-data",
-  },
-})
+      console.log("Payload envoyé:", form);
+      const res = await axios.post("http://localhost:3001/massages", form, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
-      setSuccess("Massage ajouté ✅")
-      console.log("Réponse API:", response.data)
+      setSuccess("Massage ajouté");
+      console.log("Réponse API:", response.data);
       setForm({
         name: "",
         description: "",
@@ -59,7 +66,7 @@ export default function AddMassageCard() {
         image: null,
       });
     } catch (err) {
-      setError(err.response?.data?.message || "Erreur lors de l’ajout ❌");
+      setError(err.response?.data?.message || "Erreur lors de l’ajout");
     } finally {
       setLoading(false);
     }

@@ -10,27 +10,39 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-
-import { login } from "../lib/authStore"
+import authStore from "@/lib/authStore";
 
 export default function LoginCard({ onSubmit }) {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // Récupération de l’action du store Zustand (hook)
+  const login = authStore((state) => state.login);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return; // évite les double-clics
     setError("");
     setLoading(true);
+
     try {
-      login({ email, password })
-    } catch {
-      setError("Identifiants invalides.")
+      await login({ email, password }); // ⬅️ important : attendre la promesse
+      onSubmit?.({ email });            // optionnel : callback parent si fourni
+    } catch (err) {
+      // Essaie d’extraire un message serveur sinon message générique
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Identifiants invalides.";
+      setError(message);
     } finally {
       setLoading(false);
     }
   };
+
+  console.log(localStorage.getItem("User"));
 
   return (
     <Card className="w-full max-w-sm">
@@ -42,17 +54,19 @@ export default function LoginCard({ onSubmit }) {
       </CardHeader>
 
       <CardContent>
-        <form className="space-y-4" onSubmit={handleSubmit}>
+        <form className="space-y-4" onSubmit={handleSubmit} noValidate>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
+              name="email"
               type="email"
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
+              disabled={loading}
             />
           </div>
 
@@ -60,12 +74,14 @@ export default function LoginCard({ onSubmit }) {
             <Label htmlFor="password">Mot de passe</Label>
             <Input
               id="password"
+              name="password"
               type="password"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="current-password"
+              disabled={loading}
             />
           </div>
 
