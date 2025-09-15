@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import authStore from "@/lib/authStore";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner"
 
 export default function LoginCard({ onSubmit }) {
   const [email, setEmail] = useState("");
@@ -18,20 +20,22 @@ export default function LoginCard({ onSubmit }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Récupération de l’action du store Zustand (hook)
   const login = authStore((state) => state.login);
+  const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (loading) return; // évite les double-clics
+    if (loading) return;
     setError("");
     setLoading(true);
 
     try {
-      await login({ email, password }); // ⬅️ important : attendre la promesse
-      onSubmit?.({ email });            // optionnel : callback parent si fourni
+      await login({ email, password });
+      onSubmit?.({ email }); 
+      toast.success("Connexion réussie !");
+      navigate("/");
+      
     } catch (err) {
-      // Essaie d’extraire un message serveur sinon message générique
       const message =
         err?.response?.data?.message ||
         err?.message ||
@@ -42,7 +46,6 @@ export default function LoginCard({ onSubmit }) {
     }
   };
 
-  console.log(localStorage.getItem("User"));
 
   return (
     <Card className="w-full max-w-sm">
