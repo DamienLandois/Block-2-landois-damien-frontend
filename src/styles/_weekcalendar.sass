@@ -1,0 +1,90 @@
+$shadow: 0 15px 40px rgba(0,0,0,0.12)
+$radius: 10px
+$line: #e5e7eb
+$text: #333
+$slot-h: 32px
+
+.week-calendar
+  background: #fff
+  border-radius: $radius
+  box-shadow: $shadow
+  padding: 16px 20px
+  display: flex
+  flex-direction: column
+  gap: 10px
+  min-height: 200px
+
+  &__empty
+    color: #666
+
+  &__header
+    display: flex
+    align-items: center
+    justify-content: space-between
+    .range
+      font-weight: 600
+
+  &__days
+    display: grid
+    grid-template-columns: 88px repeat(7, 1fr) 88px
+    gap: 8px
+    .day-head
+      text-align: center
+      .day-name
+        font-weight: 600
+      .day-date
+        color: #666
+    .empty
+      opacity: 0
+
+  &__grid
+    display: grid
+    grid-template-columns: 88px repeat(7, 1fr) 88px
+    align-items: stretch
+    gap: 8px
+
+  .col
+    display: grid
+    grid-auto-rows: $slot-h
+
+  .time-left
+    .slot
+      position: relative
+      display: flex
+      align-items: center
+      .label-left
+        position: absolute
+        left: 0
+        transform: translateX(-8px)
+        font-size: .9rem
+        color: $text
+        background: #fff
+        padding: 0 4px
+
+  .time-right
+    .slot
+      position: relative
+      display: flex
+      align-items: center
+      .label-right
+        position: absolute
+        right: 0
+        transform: translateX(8px)
+        font-size: .9rem
+        color: $text
+        background: #fff
+        padding: 0 4px
+
+  .day-col
+    .slot
+      border-top: 1px solid $line
+    .slot.slot--half
+      border-top-style: dashed
+
+.week-calendar.selectable
+    .day-col .slot
+        cursor: crosshair
+
+.day-col
+    .slot--selected
+        background: rgba(23, 90, 114, .10)
