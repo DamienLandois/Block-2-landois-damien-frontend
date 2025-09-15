@@ -19,7 +19,7 @@ export default function SignUp() {
   const [error, setError] = useState("")
   const register = authStore((s) => s.register)
 
-    const navigate = useNavigate()
+  const navigate = useNavigate()
 
   const onChange = (e) => {
     const { id, value } = e.target
