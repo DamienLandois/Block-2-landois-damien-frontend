@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import App from "./App.jsx";
 
+
 import Home from "./pages/Home.jsx"
 import SignIn from "./pages/SignIn.jsx"
 import SignUp from "./pages/SignUp.jsx"
@@ -23,7 +24,7 @@ const router = createBrowserRouter([
       { path: "/massages", element: <Massages /> },
       { path: "/rendezvous", element: <Booking /> },
       { path: "/apropos", element: <About /> },
-      { path: "/monprofil", element: <Profile /> },
+      { path: "/profil", element: <Profile /> },
       { path: "*", element: <div className="p-8">404 - Page introuvable</div> },
     ],
   },
