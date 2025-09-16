@@ -1,11 +1,18 @@
-import { useState } from "react"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { useNavigate } from "react-router-dom"
-import authStore from "@/lib/authStore"
-import { toast } from "sonner"
+import { useState } from "react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import authStore from "@/lib/authStore";
+import { toast } from "sonner";
 
 export default function SignUp() {
   const [form, setForm] = useState({
@@ -14,41 +21,44 @@ export default function SignUp() {
     firstname: "",
     name: "",
     phoneNumber: "",
-  })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-  const register = authStore((s) => s.register)
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const register = authStore((s) => s.register);
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const onChange = (e) => {
-    const { id, value } = e.target
-    setForm((f) => ({ ...f, [id]: value }))
-  }
+    const { id, value } = e.target;
+    setForm((f) => ({ ...f, [id]: value }));
+  };
 
   // Règles de validation :
-  const nameRegex = /^[A-Za-zÀ-ÿ' -]+$/ // noms: lettres, espaces, tirets, apostrophes
-  const emailRegex = /^\S+@\S+\.\S+$/
-  const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{11,}$/
+  const nameRegex = /^[A-Za-zÀ-ÿ' -]+$/; // noms: lettres, espaces, tirets, apostrophes
+  const emailRegex = /^\S+@\S+\.\S+$/;
+  const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{11,}$/;
 
   const validate = () => {
-    if (!nameRegex.test(form.firstname.trim())) return "Le prénom est incorrect."
-    if (!nameRegex.test(form.name.trim())) return "Le nom est incorrect."
-    if (!emailRegex.test(form.email.trim())) return "Email invalide."
-    if (!passwordRegex.test(form.password)) return "Le mot de passe doit faire au moins 11 caractères, contenir une majuscule, un chiffre et un symbole."
-    const phone = form.phoneNumber.replace(/\D/g, "")
-    if (phone.length !== 10) return "Le numéro de téléphone doit contenir 10 chiffres."
-    return ""
-  }
+    if (!nameRegex.test(form.firstname.trim()))
+      return "Le prénom est incorrect.";
+    if (!nameRegex.test(form.name.trim())) return "Le nom est incorrect.";
+    if (!emailRegex.test(form.email.trim())) return "Email invalide.";
+    if (!passwordRegex.test(form.password))
+      return "Le mot de passe doit faire au moins 11 caractères, contenir une majuscule, un chiffre et un symbole.";
+    const phone = form.phoneNumber.replace(/\D/g, "");
+    if (phone.length !== 10)
+      return "Le numéro de téléphone doit contenir 10 chiffres.";
+    return "";
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (loading) return
-    const msg = validate()
-    if (msg) return setError(msg)
+    e.preventDefault();
+    if (loading) return;
+    const msg = validate();
+    if (msg) return setError(msg);
 
-    setError("")
-    setLoading(true)
+    setError("");
+    setLoading(true);
     try {
       const payload = {
         email: form.email.trim(),
@@ -56,34 +66,33 @@ export default function SignUp() {
         firstname: form.firstname.trim(),
         name: form.name.trim(),
         phoneNumber: form.phoneNumber.replace(/\D/g, ""),
-      }
-      await register(payload)
+      };
+      await register(payload);
 
-       setForm({
+      setForm({
         email: "",
         password: "",
         firstname: "",
         name: "",
         phoneNumber: "",
-      })
+      });
 
-      toast.success("Compte créé avec succès !")
+      toast.success("Compte créé avec succès !");
 
-      navigate("/connexion")
-
+      navigate("/connexion");
     } catch (err) {
       const message =
         err?.response?.data?.message ||
         err?.message ||
-        "Impossible de créer le compte. Réessaie."
-      setError(Array.isArray(message) ? message.join(", ") : message)
+        "Impossible de créer le compte. Réessaie.";
+      setError(Array.isArray(message) ? message.join(", ") : message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen grid place-items-center p-6">
+    <div className="grid place-items-center p-6">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Inscription</CardTitle>
@@ -159,7 +168,8 @@ export default function SignUp() {
                 disabled={loading}
               />
               <p className="text-xs text-muted-foreground">
-                11+ caractères, au moins une majuscule, un chiffre et un symbole.
+                11+ caractères, au moins une majuscule, un chiffre et un
+                symbole.
               </p>
             </div>
 
@@ -181,5 +191,5 @@ export default function SignUp() {
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }

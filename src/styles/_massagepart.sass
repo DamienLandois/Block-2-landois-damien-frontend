@@ -1,14 +1,53 @@
 @use 'variables'
 
-
+.massages-page
+    display: flex
+    flex-direction: column
+    max-width: 1000px
+    margin: 0 auto
+    h1
+        font-size: 2.5rem
+        text-align: center
+        margin-bottom: 20px
 .container-massagepart
+    margin: 0 auto
+    max-width: 1000px
+    border-radius: 10px
+    margin-bottom: 50px
     .container-content
         display: flex
         .container-picture
-            width: 33%
+            width: 25%
         .container-text
-            width: 66%
+            padding: 20px
+            display: flex
+            flex-direction: column
+            gap: 15px
+            width: 50rem
+            p.price
+                font-weight: bold
+                font-size: 1.2rem
+                position: absolute
+                bottom: 20px
+                right: 50px
+                background-color: variables.$secondary-color
+                padding: 5px 10px
+                border-radius: 5px
+                color: white
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2)
+            p.duration
+                font-weight: bold
+                color: variables.$secondary-color-darker
+                font-size: 1.2rem
+                position: absolute
+                bottom: 20px
+                left: 33%
+                padding: 5px 10px
+                svg
+                    vertical-align: middle
+                    margin-right: 5px
         h3 
             font-weight: bold
+            font-size: 1.5rem
         
 

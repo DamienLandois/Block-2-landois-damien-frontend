@@ -1,36 +1,35 @@
-import { useEffect } from "react"
-import MassageCard from "../components/MassageCard"
-import AddMassage from "../components/AddMassage"
-import { massageStore } from "../lib/massageStore"
+import { useEffect } from "react";
+import MassageCard from "../components/MassageCard";
+import AddMassage from "../components/AddMassage";
+import { massageStore } from "../lib/massageStore";
 
 export default function Massages() {
-
-  const massages = massageStore((s) => s.massages) || []
+  const massages = massageStore((s) => s.massages) || [];
 
   useEffect(() => {
-    massageStore.getState().getMassages()
-  }, [])
+    massageStore.getState().getMassages();
+  }, []);
 
-  // Tri 
+  // Tri
   const sorted = [...massages].sort(
     (a, b) => (a.position ?? Infinity) - (b.position ?? Infinity)
-  )
+  );
 
-  console.log("Massage list:", sorted)
+  console.log("Massage list:", sorted);
 
-  const user = JSON.parse(localStorage.getItem("user"))
-  const admin = user?.role === "ADMIN"
+  const user = JSON.parse(localStorage.getItem("user"));
+  const admin = user?.role === "ADMIN";
 
   return (
-    <div>
+    <div className="massages-page space-y-6">
       <h1 className="text-2xl font-semibold mb-6">Massages</h1>
 
-      <div >
+      <div>
         {sorted.length > 0 ? (
           sorted.map((m) => (
             <MassageCard
               key={m.id ?? m._id ?? m.name}
-              id={m.id ?? m._id}    
+              id={m.id ?? m._id}
               title={m.name}
               content={
                 m.description ??
@@ -56,11 +55,11 @@ export default function Massages() {
           <p className="text-muted-foreground">Aucun massage pour le moment.</p>
         )}
       </div>
-{admin && (
-      <div>
-        <AddMassage />
-      </div>
-    )}
+      {admin && (
+        <div>
+          <AddMassage />
+        </div>
+      )}
     </div>
-  )
+  );
 }

@@ -42,67 +42,69 @@ export default function LoginCard({ onSubmit }) {
       setError(message);
     } finally {
       setLoading(false);
-      window.location.reload();
+      redirect;
     }
   };
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader>
-        <CardTitle>Connexion</CardTitle>
-        <CardDescription>
-          Entre tes identifiants pour accéder à ton compte.
-        </CardDescription>
-      </CardHeader>
+    <div className="grid place-items-center p-6">
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle>Connexion</CardTitle>
+          <CardDescription>
+            Entre tes identifiants pour accéder à ton compte.
+          </CardDescription>
+        </CardHeader>
 
-      <CardContent>
-        <form className="space-y-4" onSubmit={handleSubmit} noValidate>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-              disabled={loading}
-            />
-          </div>
+        <CardContent>
+          <form className="space-y-4" onSubmit={handleSubmit} noValidate>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+                disabled={loading}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="password">Mot de passe</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-              disabled={loading}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Mot de passe</Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                disabled={loading}
+              />
+            </div>
 
-          {error && <p className="text-sm text-red-500">{error}</p>}
+            {error && <p className="text-sm text-red-500">{error}</p>}
 
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Connexion..." : "Se connecter"}
-          </Button>
-        </form>
-      </CardContent>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Connexion..." : "Se connecter"}
+            </Button>
+          </form>
+        </CardContent>
 
-      <CardFooter className="text-sm">
-        <span className="text-muted-foreground">
-          Pas de compte ?{" "}
-          <a href="/signup" className="underline underline-offset-4 ml-1">
-            Inscription
-          </a>
-        </span>
-      </CardFooter>
-    </Card>
+        <CardFooter className="text-sm">
+          <span className="text-muted-foreground">
+            Pas de compte ?{" "}
+            <a href="/signup" className="underline underline-offset-4 ml-1">
+              Inscription
+            </a>
+          </span>
+        </CardFooter>
+      </Card>
+    </div>
   );
 }

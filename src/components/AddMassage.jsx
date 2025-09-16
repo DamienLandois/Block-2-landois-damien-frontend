@@ -49,7 +49,7 @@ export default function AddMassageCard() {
     if (loading) return
     const msg = validate()
     if (msg) return setError(msg)
-    setError("")
+  setError("")
     setLoading(true)
 
     try {
