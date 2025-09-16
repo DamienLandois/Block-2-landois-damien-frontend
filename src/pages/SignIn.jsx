@@ -11,8 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import authStore from "@/lib/authStore";
-import { useNavigate } from "react-router-dom";
-import { toast } from "sonner"
+import { redirect, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 export default function LoginCard({ onSubmit }) {
   const [email, setEmail] = useState("");
@@ -21,7 +21,7 @@ export default function LoginCard({ onSubmit }) {
   const [error, setError] = useState("");
 
   const login = authStore((state) => state.login);
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,10 +31,9 @@ export default function LoginCard({ onSubmit }) {
 
     try {
       await login({ email, password });
-      onSubmit?.({ email }); 
+      onSubmit?.({ email });
       toast.success("Connexion réussie !");
       navigate("/");
-      
     } catch (err) {
       const message =
         err?.response?.data?.message ||
@@ -43,9 +42,9 @@ export default function LoginCard({ onSubmit }) {
       setError(message);
     } finally {
       setLoading(false);
+      window.location.reload();
     }
   };
-
 
   return (
     <Card className="w-full max-w-sm">

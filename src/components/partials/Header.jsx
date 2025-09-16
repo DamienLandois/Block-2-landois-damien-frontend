@@ -2,17 +2,25 @@ import { NavLink } from "react-router-dom";
 import Hamburger from "hamburger-react";
 import { use, useEffect, useState } from "react";
 import { User } from "lucide-react";
+import { getUser } from "@/lib/utils";
 
 export default function Header() {
   const linkClass = ({ isActive }) =>
     `px-3 py-2 rounded-md ${isActive ? "active-link" : ""}`;
   const [isOpen, setOpen] = useState(false);
   const [width, setWidth] = useState(window.innerWidth);
-
+  const user = getUser();
   const handleClosing = () => {
     if (width < 1100) {
       setOpen(false);
     }
+  };
+
+  const handleDisconnect = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    handleClosing();
+    window.location.reload();
   };
   useEffect(() => {
     const handleResize = () => setWidth(window.innerWidth);
@@ -28,16 +36,12 @@ export default function Header() {
     }
   }, [width]);
 
-
-    console.log(localStorage.getItem("user"));
-
   return (
     <header className="border-b">
       <div className="header-top">
         {" "}
         <div className="absolute top-4 left-4">
           <NavLink to="/profil">
-
             <User size={40} />
           </NavLink>
         </div>
@@ -62,20 +66,6 @@ export default function Header() {
             </NavLink>
             <NavLink
               onClick={handleClosing}
-              to="/inscription"
-              className={linkClass}
-            >
-              Inscription
-            </NavLink>
-            <NavLink
-              onClick={handleClosing}
-              to="/connexion"
-              className={linkClass}
-            >
-              Connexion
-            </NavLink>
-            <NavLink
-              onClick={handleClosing}
               to="/massages"
               className={linkClass}
             >
@@ -95,6 +85,33 @@ export default function Header() {
             >
               À propos
             </NavLink>
+            {!user && (
+              <>
+                <NavLink
+                  onClick={handleClosing}
+                  to="/inscription"
+                  className={linkClass}
+                >
+                  Inscription
+                </NavLink>
+                <NavLink
+                  onClick={handleClosing}
+                  to="/connexion"
+                  className={linkClass}
+                >
+                  Connexion
+                </NavLink>
+              </>
+            )}
+            {user && (
+              <NavLink
+                onClick={handleDisconnect}
+                to="/"
+                className="px-3 py-2 rounded-md"
+              >
+                Se déconnecter
+              </NavLink>
+            )}
           </nav>
         </div>
       )}
