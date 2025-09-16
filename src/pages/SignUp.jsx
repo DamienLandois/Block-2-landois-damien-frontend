@@ -3,6 +3,9 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { useNavigate } from "react-router-dom"
+import authStore from "@/lib/authStore"
+import { toast } from "sonner"
 
 export default function SignUp() {
   const [form, setForm] = useState({
@@ -14,6 +17,9 @@ export default function SignUp() {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const register = authStore((s) => s.register)
+
+  const navigate = useNavigate()
 
   const onChange = (e) => {
     const { id, value } = e.target
@@ -21,31 +27,56 @@ export default function SignUp() {
   }
 
   // Règles de validation :
-  // - Prénom/Nom : lettres et tirets uniquement
-  const nameRegex = /^[A-Za-zÀ-ÿ\-]+$/
-  // - Email basique
+  const nameRegex = /^[A-Za-zÀ-ÿ' -]+$/ // noms: lettres, espaces, tirets, apostrophes
   const emailRegex = /^\S+@\S+\.\S+$/
-  // - Mot de passe : min 11 caractères, 1 maj, 1 chiffre, 1 symbole
   const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{11,}$/
 
   const validate = () => {
-    if (!nameRegex.test(form.firstname)) return "Le prénom est incorrect."
-    if (!nameRegex.test(form.name)) return "Le nom est incorrect."
-    if (!emailRegex.test(form.email)) return "Email invalide."
+    if (!nameRegex.test(form.firstname.trim())) return "Le prénom est incorrect."
+    if (!nameRegex.test(form.name.trim())) return "Le nom est incorrect."
+    if (!emailRegex.test(form.email.trim())) return "Email invalide."
     if (!passwordRegex.test(form.password)) return "Le mot de passe doit faire au moins 11 caractères, contenir une majuscule, un chiffre et un symbole."
+    const phone = form.phoneNumber.replace(/\D/g, "")
+    if (phone.length !== 10) return "Le numéro de téléphone doit contenir 10 chiffres."
     return ""
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (loading) return
     const msg = validate()
     if (msg) return setError(msg)
+
     setError("")
     setLoading(true)
     try {
-      console.log("signup payload:", form)
-    } catch {
-      setError("Impossible de créer le compte. Réessaie.")
+      const payload = {
+        email: form.email.trim(),
+        password: form.password,
+        firstname: form.firstname.trim(),
+        name: form.name.trim(),
+        phoneNumber: form.phoneNumber.replace(/\D/g, ""),
+      }
+      await register(payload)
+
+       setForm({
+        email: "",
+        password: "",
+        firstname: "",
+        name: "",
+        phoneNumber: "",
+      })
+
+      toast.success("Compte créé avec succès !")
+
+      navigate("/connexion")
+
+    } catch (err) {
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Impossible de créer le compte. Réessaie."
+      setError(Array.isArray(message) ? message.join(", ") : message)
     } finally {
       setLoading(false)
     }
@@ -60,7 +91,7 @@ export default function SignUp() {
         </CardHeader>
 
         <CardContent>
-          <form className="space-y-4" onSubmit={handleSubmit}>
+          <form className="space-y-4" onSubmit={handleSubmit} noValidate>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="firstname">Prénom</Label>
@@ -70,6 +101,7 @@ export default function SignUp() {
                   onChange={onChange}
                   placeholder="Prénom"
                   required
+                  disabled={loading}
                 />
               </div>
               <div className="space-y-2">
@@ -80,6 +112,7 @@ export default function SignUp() {
                   onChange={onChange}
                   placeholder="Nom"
                   required
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -94,6 +127,7 @@ export default function SignUp() {
                 placeholder="you@example.com"
                 required
                 autoComplete="email"
+                disabled={loading}
               />
             </div>
 
@@ -107,7 +141,8 @@ export default function SignUp() {
                 placeholder="0612345678"
                 required
                 inputMode="numeric"
-                maxLength={10}
+                maxLength={14} // autorise espaces
+                disabled={loading}
               />
             </div>
 
@@ -121,9 +156,10 @@ export default function SignUp() {
                 placeholder="•••••••••••"
                 required
                 autoComplete="new-password"
+                disabled={loading}
               />
               <p className="text-xs text-muted-foreground">
-                Merci de choisir un mot de passe de 11 caractères possédant au moins une majuscule, un chiffre et un symbole
+                11+ caractères, au moins une majuscule, un chiffre et un symbole.
               </p>
             </div>
 
@@ -137,7 +173,10 @@ export default function SignUp() {
 
         <CardFooter className="text-sm">
           <span className="text-muted-foreground">
-            Déjà un compte ? <a href="/signin" className="underline underline-offset-4 ml-1">Se connecter</a>
+            Déjà un compte ?{" "}
+            <a href="/signin" className="underline underline-offset-4 ml-1">
+              Se connecter
+            </a>
           </span>
         </CardFooter>
       </Card>
