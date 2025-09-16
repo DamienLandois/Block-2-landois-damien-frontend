@@ -29,8 +29,6 @@ export default function Header() {
   }, [width]);
 
 
-    console.log(localStorage.getItem("user"));
-
   return (
     <header className="border-b">
       <div className="header-top">
