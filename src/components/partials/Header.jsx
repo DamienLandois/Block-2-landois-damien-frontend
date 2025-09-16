@@ -28,14 +28,12 @@ export default function Header() {
     }
   }, [width]);
 
-
   return (
     <header className="border-b">
       <div className="header-top">
         {" "}
         <div className="absolute top-4 left-4">
           <NavLink to="/profil">
-
             <User size={40} />
           </NavLink>
         </div>
