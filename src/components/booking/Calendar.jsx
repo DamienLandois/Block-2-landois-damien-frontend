@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 export default function Calendar() {
   const today = useMemo(() => new Date(), []);
@@ -8,56 +8,58 @@ export default function Calendar() {
   const currMonth = viewDate.getMonth();
 
   const mois = [
-    "Janvier",
-    "Février",
-    "Mars",
-    "Avril",
-    "Mai",
-    "Juin",
-    "Juillet",
-    "Août",
-    "Septembre",
-    "Octobre",
-    "Novembre",
-    "Décembre",
+    "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
   ];
 
   const { label, days } = useMemo(() => {
-    const firstDayOfMonth = new Date(currYear, currMonth, 1).getDay();
+    const jsFirst = new Date(currYear, currMonth, 1).getDay();
+    const firstDayIndex = (jsFirst + 6) % 7;
+
     const lastDateOfMonth = new Date(currYear, currMonth + 1, 0).getDate();
-    const lastDayOfMonth = new Date(currYear, currMonth, lastDateOfMonth).getDay();
+    const jsLastDay = new Date(currYear, currMonth, lastDateOfMonth).getDay();
+    const lastDayIndex = (jsLastDay + 6) % 7;
+
     const lastDateOfLastMonth = new Date(currYear, currMonth, 0).getDate();
 
     const li = [];
 
-    for (let i = firstDayOfMonth; i > 0; i--) {
-      li.push({ key: `prev-${i}`, label: lastDateOfLastMonth - i + 1, className: "inactive" });
+    // Jours du mois précédent (pour compléter la 1re ligne)
+    for (let i = firstDayIndex; i > 0; i--) {
+      li.push({
+        key: `prev-${i}`,
+        label: lastDateOfLastMonth - i + 1,
+        className: "inactive",
+      });
     }
 
+    // Jours du mois courant
     for (let i = 1; i <= lastDateOfMonth; i++) {
       const isToday =
         i === today.getDate() &&
         currMonth === today.getMonth() &&
         currYear === today.getFullYear();
-      li.push({ key: `curr-${i}`, label: i, className: isToday ? "active" : undefined });
+      li.push({
+        key: `curr-${i}`,
+        label: i,
+        className: isToday ? "active" : undefined,
+      });
     }
 
-    for (let i = lastDayOfMonth; i < 6; i++) {
-      li.push({ key: `next-${i}`, label: i - lastDayOfMonth + 1, className: "inactive" });
+    // Jours du mois suivant (pour compléter la dernière ligne)
+    for (let i = lastDayIndex; i < 6; i++) {
+      li.push({
+        key: `next-${i}`,
+        label: i - lastDayIndex + 1,
+        className: "inactive",
+      });
     }
 
     return { label: `${mois[currMonth]} ${currYear}`, days: li };
   }, [currMonth, currYear, today]);
 
-  const goPrev = () => {
-    const prev = new Date(currYear, currMonth - 1, 1);
-    setViewDate(prev);
-  };
-
-  const goNext = () => {
-    const next = new Date(currYear, currMonth + 1, 1);
-    setViewDate(next);
-  };
+  const goPrev = () => setViewDate(new Date(currYear, currMonth - 1, 1));
+  const goNext = () => setViewDate(new Date(currYear, currMonth + 1, 1));
 
   return (
     <>
@@ -65,7 +67,6 @@ export default function Calendar() {
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
       />
-
       <div className="wrapper">
         <div className="wrapper-header">
           <p className="date">{label}</p>
@@ -77,13 +78,7 @@ export default function Calendar() {
 
         <div className="calendrier">
           <ul className="semaines">
-            <li>Lun</li>
-            <li>Mar</li>
-            <li>Mer</li>
-            <li>Jeu</li>
-            <li>Ven</li>
-            <li>Sam</li>
-            <li>Dim</li>
+            <li>Lun</li><li>Mar</li><li>Mer</li><li>Jeu</li><li>Ven</li><li>Sam</li><li>Dim</li>
           </ul>
           <ul className="jours">
             {days.map((d) => (
