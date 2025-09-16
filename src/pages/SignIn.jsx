@@ -42,7 +42,7 @@ export default function LoginCard({ onSubmit }) {
       setError(message);
     } finally {
       setLoading(false);
-      redirect;
+      window.location.reload();
     }
   };
 

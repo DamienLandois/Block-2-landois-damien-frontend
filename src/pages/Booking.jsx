@@ -13,15 +13,25 @@ const toInputValue = (iso) => {
 export default function Booking() {
   const {
     admin,
-    date, setDate,
+    date,
+    setDate,
     key,
-    resetTick,                // <- remount après envoi
-    list, onChange,
-    repeat, setRepeat,
+    resetTick, // <- remount après envoi
+    list,
+    onChange,
+    repeat,
+    setRepeat,
     existing,
     summary,
-    sendList, onSend, sendLoading, sendResult,
-    edit, onExistClick, onEditSave, onEditDelete, onEditCancel,
+    sendList,
+    onSend,
+    sendLoading,
+    sendResult,
+    edit,
+    onExistClick,
+    onEditSave,
+    onEditDelete,
+    onEditCancel,
   } = useSlotsPlanner();
 
   const calendarRef = useRef(null);
@@ -42,7 +52,7 @@ export default function Booking() {
 
         <aside className="booking-week">
           <WeekCalendar
-            key={`${key}:${resetTick}`}   // <- remount forcé après ajout pour enlever le rouge
+            key={`${key}:${resetTick}`} // <- remount forcé après ajout pour enlever le rouge
             anchorDate={date}
             selectable={admin}
             onWeekSlotsChange={admin ? onChange : undefined}
@@ -54,9 +64,20 @@ export default function Booking() {
         {admin && (
           <>
             <section className="booking-summary" style={{ marginTop: 16 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                <h2 style={{ margin: 0 }}>Récapitulatif (semaine sélectionnée)</h2>
-                <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  flexWrap: "wrap",
+                }}
+              >
+                <h2 style={{ margin: 0 }}>
+                  Récapitulatif (semaine sélectionnée)
+                </h2>
+                <label
+                  style={{ display: "flex", alignItems: "center", gap: 8 }}
+                >
                   Répéter sur
                   <input
                     type="number"
@@ -76,9 +97,21 @@ export default function Booking() {
                 </span>
               </div>
 
-              <table className="summary-table" style={{ width: "100%", marginTop: 8, borderCollapse: "collapse" }}>
+              <table
+                className="summary-table"
+                style={{
+                  width: "100%",
+                  marginTop: 8,
+                  borderCollapse: "collapse",
+                }}
+              >
                 <thead>
-                  <tr style={{ textAlign: "left", borderBottom: "1px solid #eee" }}>
+                  <tr
+                    style={{
+                      textAlign: "left",
+                      borderBottom: "1px solid #eee",
+                    }}
+                  >
                     <th style={{ padding: "8px 6px" }}>Jour</th>
                     <th style={{ padding: "8px 6px" }}>Plages</th>
                   </tr>
@@ -86,8 +119,12 @@ export default function Booking() {
                 <tbody>
                   {summary.map((row, i) => (
                     <tr key={i} style={{ borderBottom: "1px solid #f2f2f2" }}>
-                      <td style={{ padding: "8px 6px", width: 100 }}>{row.day}</td>
-                      <td style={{ padding: "8px 6px" }}>{row.ranges.length ? row.ranges.join("   ") : "—"}</td>
+                      <td style={{ padding: "8px 6px", width: 100 }}>
+                        {row.day}
+                      </td>
+                      <td style={{ padding: "8px 6px" }}>
+                        {row.ranges.length ? row.ranges.join("   ") : "—"}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -95,7 +132,10 @@ export default function Booking() {
             </section>
 
             <section className="booking-admin" style={{ marginTop: 16 }}>
-              <button onClick={() => onSend(sendList)} disabled={!count || sendLoading}>
+              <button
+                onClick={() => onSend(sendList)}
+                disabled={!count || sendLoading}
+              >
                 {sendLoading ? "Envoi..." : `Envoyer ${count} créneaux`}
               </button>
 
@@ -111,7 +151,8 @@ export default function Booking() {
                       <ul>
                         {sendResult.failures.map((f, i) => (
                           <li key={i}>
-                            [{f.status}] {f.dto?.startTime} — {f.error?.message || JSON.stringify(f.error)}
+                            [{f.status}] {f.dto?.startTime} —{" "}
+                            {f.error?.message || JSON.stringify(f.error)}
                           </li>
                         ))}
                       </ul>
@@ -127,28 +168,59 @@ export default function Booking() {
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
-                    const startIso = new Date(e.currentTarget.start.value).toISOString();
-                    const endIso = new Date(e.currentTarget.end.value).toISOString();
+                    const startIso = new Date(
+                      e.currentTarget.start.value
+                    ).toISOString();
+                    const endIso = new Date(
+                      e.currentTarget.end.value
+                    ).toISOString();
                     onEditSave({ startIso, endIso }).catch((err) => {
                       alert("Mise à jour impossible. Voir console.");
                       console.error(err);
                     });
                   }}
-                  style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}
+                  style={{
+                    display: "flex",
+                    gap: 12,
+                    alignItems: "flex-end",
+                    flexWrap: "wrap",
+                  }}
                 >
-                  <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <label
+                    style={{ display: "flex", flexDirection: "column", gap: 4 }}
+                  >
                     Début
-                    <input type="datetime-local" name="start" step="1800" defaultValue={toInputValue(edit.startTime)} required />
+                    <input
+                      type="datetime-local"
+                      name="start"
+                      step="1800"
+                      defaultValue={toInputValue(edit.startTime)}
+                      required
+                    />
                   </label>
-                  <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <label
+                    style={{ display: "flex", flexDirection: "column", gap: 4 }}
+                  >
                     Fin
-                    <input type="datetime-local" name="end" step="1800" defaultValue={toInputValue(edit.endTime)} required />
+                    <input
+                      type="datetime-local"
+                      name="end"
+                      step="1800"
+                      defaultValue={toInputValue(edit.endTime)}
+                      required
+                    />
                   </label>
                   <button type="submit">Mettre à jour</button>
-                  <button type="button" onClick={() => onEditDelete().catch(console.error)} style={{ background: "#fee", borderColor: "#fca5a5" }}>
+                  <button
+                    type="button"
+                    onClick={() => onEditDelete().catch(console.error)}
+                    style={{ background: "#fee", borderColor: "#fca5a5" }}
+                  >
                     Supprimer
                   </button>
-                  <button type="button" onClick={onEditCancel}>Annuler</button>
+                  <button type="button" onClick={onEditCancel}>
+                    Annuler
+                  </button>
                 </form>
               </section>
             )}
