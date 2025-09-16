@@ -33,11 +33,6 @@ export default function Booking() {
     <div className="booking-page">
       <header className="booking-header">
         <h1>Gestion des créneaux</h1>
-        <p>
-          {admin
-            ? "Sélection en rouge (drag). Les créneaux existants sont en vert : cliquez dessus pour éditer ou supprimer."
-            : "Calendrier des disponibilités (lecture seule). Les créneaux disponibles apparaissent en vert."}
-        </p>
       </header>
 
       <main className="booking-grid">
